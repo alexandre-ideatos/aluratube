@@ -3,9 +3,32 @@ import config from "../config.json";
 import styled from "styled-components";
 import Menu from "../src/components/Menu";
 import { StyledTimeline } from "../src/components/Timeline";
+import { videoService } from "../src/services/videoService";
 
 function HomePage() {
+  const service = videoService();
   const [valorDoFiltro, setValorDoFiltro] = React.useState("");
+  const [playlists, setPlaylists] = React.useState({});     // config.playlists
+
+    React.useEffect(() => {
+        console.log("useEffect");
+        service
+            .getAllVideos()
+            .then((dados) => {
+                console.log(dados.data);
+                // Forma imutavel
+                const novasPlaylists = {};
+                dados.data.forEach((video) => {
+                    if (!novasPlaylists[video.playlist]) novasPlaylists[video.playlist] = [];
+                    novasPlaylists[video.playlist] = [
+                        video,
+                        ...novasPlaylists[video.playlist],
+                    ];
+                });
+
+                setPlaylists(novasPlaylists);
+            });
+    }, []);
 
   return (
     <>
@@ -18,7 +41,7 @@ function HomePage() {
       >
         <Menu/>
         <Header/>
-        <Timeline searchValue={valorDoFiltro} playlists={config.playlists}>
+        <Timeline searchValue={valorDoFiltro} playlists={playlists}>
           Conteúdo
         </Timeline>
       </div>
@@ -71,7 +94,7 @@ function Header() {
 }
 
 function Timeline({searchValue, ...props}) {
-  const playlistNames = Object.keys(config.playlists);
+  const playlistNames = Object.keys(props.playlists);
 
   return (
     <StyledTimeline>
@@ -87,7 +110,7 @@ function Timeline({searchValue, ...props}) {
                 return titleNormalized.includes(searchValueNormalized);
               }).map((video) => {
                 return (
-                  <a href={video.url} href={video.url}>
+                  <a href={video.url}>
                     <img src={video.thumb} />
                     <span>
                       {video.title}
